@@ -55,7 +55,7 @@ int main()
             for (int attack = 0; attack <= max_notes-jc-j; attack++) {
                 for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
                 {
-                    int idx = jdiff * (max_notes + 1) * m_num * threads_per_block + attack * m_num * 
+                int idx = jdiff * (max_notes + 1) * m_num * threads_per_block + attack * m_num * 
                     threads_per_block + miss;
                     if (current_max <= points[idx]) {
                         if(current_max < points[idx])
@@ -63,7 +63,7 @@ int main()
                             current_max = points[idx];
                             cout << "--------" << current_max << "--------" << endl;
                         }
-                        score = (jc*1.01f + j + attack * 0.5f) * 1000000 / (jc + j + jdiff + attack + miss);
+                        score = (jc*1.01f + j +jdiff+ attack * 0.5f) * 1000000 / (jc + j + jdiff + attack + miss);
                         cout << jc+j+jdiff+attack+miss << " " << score << " "
                         << jc << "-" << j+jdiff << "-" << attack << "-" << miss << " " << points[idx] << " 7(s)" << endl;
                     }
@@ -81,7 +81,7 @@ int main()
             for (int attack = 0; attack <= max_notes-jc-j; attack++) {
                 for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
                 {
-                    int idx = attack * (max_notes+1) + miss;
+                    int idx = attack * m_num * threads_per_block + miss;
                     if (current_max <= points[idx]) {
                         if(current_max < points[idx])
                         {
