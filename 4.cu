@@ -10,14 +10,14 @@ using namespace std;
 
 __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, typeof_memo *points) {
     int justice = j + blockIdx.x, a = blockIdx.y, m = blockIdx.z*threads_per_block + threadIdx.x; //mだけグリッドzとブロック内で分けてる
-    int idx = a * (blockDim.z*threads_per_block) + m;
-    if (max_notes < jc + j + a + m) return;
-    else if (!(jc + j + a + m))
+    int idx = blockIdx.x * threads_per_block*blockDim.z * (max_notes + 1) + a * blockDim.z*threads_per_block + m;
+    if (max_notes < jc + justice + a + m) return;
+    else if (!(jc + justice + a + m))
     {
         points[idx] = 0;
         return;
     }
-    points[idx] = memo[(size_t)((jc*1.01f + j + a * 0.5f) * 1000000 / (jc + j + a + m))] + memo[jc] + memo[j] + memo[a] + memo[m];
+    points[idx] = memo[(size_t)((jc*1.01f + justice + a * 0.5f) * 1000000 / (jc + justice + a + m))] + memo[jc] + memo[justice] + memo[a] + memo[m];
     return;
 }
 
