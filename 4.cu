@@ -51,20 +51,21 @@ int main()
         {
             calc_score << <grid, block >> > (jc, j, max_notes, memo, points);
             cudaDeviceSynchronize();
-            
+            for (int jdiff = 0; jdiff < j_range; jdiff++)
             for (int attack = 0; attack <= max_notes-jc-j; attack++) {
                 for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
                 {
-                    int idx = attack * (max_notes+1) + miss;
+                    int idx = jdiff * (max_notes + 1) * m_num * threads_per_block + attack * m_num * t
+                    threads_per_block + miss;
                     if (current_max <= points[idx]) {
                         if(current_max < points[idx])
                         {
                             current_max = points[idx];
                             cout << "--------" << current_max << "--------" << endl;
                         }
-                        score = (jc*1.01f + j + attack * 0.5f) * 1000000 / (jc + j + attack + miss);
-                        cout << jc+j+attack+miss << " " << score << " "
-                        << jc << "-" << j << "-" << attack << "-" << miss << " " << points[idx] << " 7(s)" << endl;
+                        score = (jc*1.01f + j + attack * 0.5f) * 1000000 / (jc + j + jdiff + attack + miss);
+                        cout << jc+j+jdiff+attack+miss << " " << score << " "
+                        << jc << "-" << j+jdiff << "-" << attack << "-" << miss << " " << points[idx] << " 7(s)" << endl;
                     }
                 }
             }
