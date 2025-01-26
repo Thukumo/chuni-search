@@ -69,8 +69,34 @@ int main()
                 }
             }
         }
-        for (int j = (max_notes+1)/j_range * j_range, j <= max_notes)
+
+        // 残ったjusticeを処理
+        grid.x = 1;
+        for (int j = (max_notes - jc + 1) / j_range * j_range; j <= max_notes-jc; j++)
+        {
+            calc_score << <grid, block >> > (jc, j, max_notes, memo, points);
+            cudaDeviceSynchronize();
+            
+            for (int attack = 0; attack <= max_notes-jc-j; attack++) {
+                for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
+                {
+                    int idx = attack * (max_notes+1) + miss;
+                    if (current_max <= points[idx]) {
+                        if(current_max < points[idx])
+                        {
+                            current_max = points[idx];
+                            cout << "--------" << current_max << "--------" << endl;
+                        }
+                        score = (jc*1.01f + j + attack * 0.5f) * 1000000 / (jc + j + attack + miss);
+                        cout << jc+j+attack+miss << " " << score << " "
+                        << jc << "-" << j << "-" << attack << "-" << miss << " " << points[idx] << " 7(s)" << endl;
+                    }
+                }
+            }
+        }
+        grid.x = j_range;
     }
+
     cout << "Exploration finished!" << endl;
     return 0;
 }
