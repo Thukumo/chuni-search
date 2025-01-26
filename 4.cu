@@ -26,7 +26,7 @@ int main()
     int max_notes = 4444;
     dim3 block(threads_per_block);
     int j_range = 1;
-    while (sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1) < 1024 * 1024 * 1024 * 2) j_range++;
+    while (sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1) < 1024 * 1024 * 1024 * 1) j_range++;
     //0~max_notesなので全部max_notes+1となってる
     //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1してる
     int m_num = (max_notes+1)/threads_per_block + !(int)((double)(max_notes+1)/threads_per_block - (max_notes+1)/threads_per_block);
@@ -55,7 +55,7 @@ int main()
             for (int attack = 0; attack <= max_notes-jc-j; attack++) {
                 for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
                 {
-                    int idx = jdiff * (max_notes + 1) * m_num * threads_per_block + attack * m_num * t
+                    int idx = jdiff * (max_notes + 1) * m_num * threads_per_block + attack * m_num * 
                     threads_per_block + miss;
                     if (current_max <= points[idx]) {
                         if(current_max < points[idx])
