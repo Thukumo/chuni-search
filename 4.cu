@@ -32,7 +32,7 @@ int main()
     //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1
     int m_num = (max_notes+1)/threads_per_block + !!((max_notes+1)%threads_per_block);
 
-    dim3 grid(j_range, max_notes+1, m_num); //x: j(始点), y: a, z: m
+    dim3 grid(j_range, max_notes+1, m_num); //x: j(長さ), y: a, z: m
     int current_max = 1, score;
     typeof_memo *memo, *host_memo = new typeof_memo[1010000 + 1], *points;
     cudaMallocManaged(&points, sizeof(typeof_memo) *grid.x * grid.y * grid.z * threads_per_block);
