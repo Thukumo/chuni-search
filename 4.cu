@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 using namespace std;
-#define threads_per_block 32 //真に一度の実行で終わらせられそうだからwarpに合わせる
+#define threads_per_block 32
 #define typeof_memo short
 
 __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, typeof_memo *points) {
@@ -27,9 +27,9 @@ int main()
     int j_range = 1;
     while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < 1024 * 4) j_range++;
     j_range-=1;
-    //0~max_notesなので全部max_notes+1となってる
-    //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1してる
-    int m_num = (max_notes+1)/threads_per_block + !((max_notes+1)%threads_per_block);
+    //0~max_notesなので全部max_notes+1になってる
+    //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1
+    int m_num = (max_notes+1)/threads_per_block + !!((max_notes+1)%threads_per_block);
 
     dim3 grid(j_range, max_notes+1, m_num); //x: a, y: 未使用, z: m
     int current_max = 1, score;
@@ -52,10 +52,10 @@ int main()
         {
             calc_score << <grid, block >> > (jc, j, max_notes, memo, points);
             cudaDeviceSynchronize();
-            for (int jdiff = 0; jdiff < j_range; jdiff++)
-            for (int attack = 0; attack <= max_notes-jc-j; attack++) {
-                for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
-                {
+            cout << j_range << endl;
+            for (int jdiff = 0; jdiff < j_range; jdiff++) for (int attack = 0; attack <= max_notes-jc-j; attack++)
+            for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
+            {
                 int idx = jdiff * (max_notes + 1) * m_num * threads_per_block + attack * m_num * 
                     threads_per_block + miss;
                     if (current_max <= points[idx]) {
@@ -68,7 +68,6 @@ int main()
                         cout << jc+j+jdiff+attack+miss << " " << score << " "
                         << jc << "-" << j+jdiff << "-" << attack << "-" << miss << " " << points[idx] << " 7(s)" << endl;
                     }
-                }
             }
         }
 
