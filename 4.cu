@@ -11,12 +11,7 @@ using namespace std;
 __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, typeof_memo *points) {
     int justice = j + blockIdx.x, a = blockIdx.y, m = blockIdx.z*threads_per_block + threadIdx.x; //mだけグリッドzとブロック内で分けてる
     int idx = blockIdx.x * threads_per_block*blockDim.z * (max_notes + 1) + a * blockDim.z*threads_per_block + m;
-    if (max_notes < jc + justice + a + m)
-    {
-        points[idx] = 0;
-        return;
-    }
-    else if (!(jc + justice + a + m))
+    if (max_notes < jc + justice + a + m || !(jc + justice + a + m))
     {
         points[idx] = 0;
         return;
