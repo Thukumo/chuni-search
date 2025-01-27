@@ -22,7 +22,7 @@ __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, type
     return;
 }
 
-int main()
+int main() //5.cuは今後のテスト用に残しておく
 {
     int test = 100;
     dim3 grid(1, test+1, (test+1)/threads_per_block + !!(test%threads_per_block));
@@ -44,7 +44,7 @@ int main()
         for (int m = 0; m < grid.z*threads_per_block; m++)
         {
             int idx = a * grid.z * threads_per_block + m;
-            if (points[idx] >= 0) { // 修正: 正常な要素のみ表示
+            if (points[idx] >= 0) {
                 if(1007500 <= points[idx]) cout << "(" << a << ", " << m << "): " << points[idx] << endl;
             }
         }
