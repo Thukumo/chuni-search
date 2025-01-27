@@ -33,7 +33,7 @@ int main()
     {
         double tmp = (double)(max_notes+1)/threads_per_block - (max_notes+1)/threads_per_block;
         int *tmp2 = (void)&tmp;
-        m_num = (max_notes+1)/threads_per_block + !(int);
+        m_num = (max_notes+1)/threads_per_block + !tmp2;
     }
     dim3 grid(j_range, max_notes+1, m_num); //x: a, y: 未使用, z: m
     int current_max = 1, score;
