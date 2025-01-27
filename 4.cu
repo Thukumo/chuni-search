@@ -11,8 +11,7 @@ using namespace std;
 __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, typeof_memo *points) {
     int justice = j + blockIdx.x, a = blockIdx.y, m = blockIdx.z*threads_per_block + threadIdx.x; //mだけグリッドzとブロック内で分けてる
     int idx = blockIdx.x * threads_per_block*blockDim.z * (max_notes + 1) + a * blockDim.z*threads_per_block + m;
-    if (max_notes < jc + justice + a + m) return;
-    else if (!(jc + justice + a + m))
+    if (max_notes < jc + justice + a + m || !(jc + justice + a + m))
     {
         points[idx] = 0;
         return;
@@ -26,10 +25,15 @@ int main()
     int max_notes = 4444;
     dim3 block(threads_per_block);
     int j_range = 1;
-    while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < 1024 * 3) j_range++;
+    while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < 1024 * 4) j_range++;
+    j_range-=1
     //0~max_notesなので全部max_notes+1となってる
     //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1してる
-    int m_num = (max_notes+1)/threads_per_block + !(int)((double)(max_notes+1)/threads_per_block - (max_notes+1)/threads_per_block);
+    int m_num;
+    {
+        float *tmp = (float)(max_notes+1)/threads_per_block - (max_notes+1)/threads_per_block;
+        m_num = (max_notes+1)/threads_per_block + !*(int)(void)&tmp;
+    }
     dim3 grid(j_range, max_notes+1, m_num); //x: a, y: 未使用, z: m
     int current_max = 1, score;
     typeof_memo *memo, *host_memo = new typeof_memo[1010000 + 1], *points;
