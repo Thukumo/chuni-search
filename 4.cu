@@ -23,10 +23,11 @@ __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, type
 int main()
 {
     int max_notes = 4444;
+    
     dim3 block(threads_per_block);
     int j_range = 1;
     //ここでGPUメモリ(ホストメモリも)の使用量を調整
-    while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < 1024 * 3) j_range++;
+    while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < 1024 * 2) j_range++;
     j_range-=1;
     //0~max_notesなので全部max_notes+1になってる
     //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1
