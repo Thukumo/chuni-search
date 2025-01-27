@@ -31,8 +31,9 @@ int main()
     //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1してる
     int m_num;
     {
-        float *tmp = (float)(max_notes+1)/threads_per_block - (max_notes+1)/threads_per_block;
-        m_num = (max_notes+1)/threads_per_block + !*(int)(void)&tmp;
+        float *tmp;
+        *tmp = (float)(max_notes+1)/threads_per_block - (max_notes+1)/threads_per_block;
+        m_num = (max_notes+1)/threads_per_block + !*(int *)(void *)&tmp;
     }
     dim3 grid(j_range, max_notes+1, m_num); //x: a, y: 未使用, z: m
     int current_max = 1, score;
