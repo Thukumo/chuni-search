@@ -26,7 +26,7 @@ int main()
     dim3 block(threads_per_block);
     int j_range = 1;
     while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < 1024 * 4) j_range++;
-    j_range-=1
+    j_range-=1;
     //0~max_notesなので全部max_notes+1となってる
     //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1してる
     int m_num;
