@@ -10,7 +10,7 @@ using namespace std;
 
 __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, typeof_memo *points) {
     int justice = j + blockIdx.x, a = blockIdx.y, m = blockIdx.z*threads_per_block + threadIdx.x; //mだけグリッドzとブロック内で分けてる
-    int idx = blockIdx.x * threads_per_block*blockDim.z * (max_notes + 1) + a * blockDim.z*threads_per_block + m;
+    int idx = blockIdx.x * threads_per_block*gridDim.z * (max_notes + 1) + a * gridDim.z*threads_per_block + m;
     if (max_notes < jc + justice + a + m || !(jc + justice + a + m))
     {
         points[idx] = 0;
@@ -23,9 +23,9 @@ __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, type
 int main()
 {
     int max_notes = 4444;
-    dim3 block(threads_per_block);
+    dim3 block(1); //もったいない気もするけどいったんこれで(分け方とか考えるのがむずい(だるい))
     int j_range = 1;
-    while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < 1024 * 4) j_range++;
+    while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < 1024 * 2) j_range++;
     j_range-=1;
     //0~max_notesなので全部max_notes+1になってる
     //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1
@@ -52,7 +52,6 @@ int main()
         {
             calc_score << <grid, block >> > (jc, j, max_notes, memo, points);
             cudaDeviceSynchronize();
-            cout << j_range << endl;
             for (int jdiff = 0; jdiff < j_range; jdiff++) for (int attack = 0; attack <= max_notes-jc-j; attack++)
             for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
             {
