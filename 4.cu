@@ -26,7 +26,8 @@ int main()
     dim3 block(threads_per_block); //もったいない気もするけどいったんこれで(分け方とか考えるのがむずい(だるい))
     int j_range = 1;
     //ここでGPUメモリ(ホストメモリも)の使用量を調整
-    while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < 1024 * 3) j_range++;
+    int memory_usage_limit = 1024*2; //MB
+    while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < memory_usage_limit) j_range++;
     j_range-=1;
     //0~max_notesなので全部max_notes+1になってる
     //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1
@@ -53,6 +54,11 @@ int main()
         {
             calc_score << <grid, block >> > (jc, j, max_notes, memo, points);
             cudaDeviceSynchronize();
+            cudaError_t err = cudaGetLastError();
+            if (err != cudaSuccess) {
+                cerr << "Failed to launch calc_score kernel: " << cudaGetErrorString(err) << endl;
+                return -1;
+            }
             for (int jdiff = 0; jdiff < j_range; jdiff++) for (int attack = 0; attack <= max_notes-jc-j; attack++)
             for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
             {
