@@ -23,7 +23,8 @@ __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, type
 int main()
 {
     int max_notes = 4444;
-    dim3 block(threads_per_block); //もったいない気もするけどいったんこれで(分け方とか考えるのがむずい(だるい))
+    
+    dim3 block(threads_per_block);
     int j_range = 1;
     //ここでGPUメモリ(ホストメモリも)の使用量を調整
     int memory_usage_limit = 1024*2; //MB
@@ -33,12 +34,12 @@ int main()
     //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1
     int m_num = (max_notes+1)/threads_per_block + !!((max_notes+1)%threads_per_block);
 
-    dim3 grid(j_range, max_notes+1, m_num); //x: a, y: 未使用, z: m
+    dim3 grid(j_range, max_notes+1, m_num); //x: j(長さ), y: a, z: m
     int current_max = 1, score;
     typeof_memo *memo, *host_memo = new typeof_memo[1010000 + 1], *points;
     cudaMallocManaged(&points, sizeof(typeof_memo) *grid.x * grid.y * grid.z * threads_per_block);
 
-    cudaMalloc(&memo, sizeof(typeof_memo) * (1010000 + 1)); //よく使うからこれはグローバルメモリに載せる
+    cudaMalloc(&memo, sizeof(typeof_memo) * (1010000 + 1)); //よく使うからこれはグローバルメモリに載せる コンスタントにはでかすぎ
     #pragma omp parallel for //ほんとは各桁いい感じに回せばいいけどめんどいからゴリ押す
     for (int i = 0; i <= 1010000; i++) {
         auto s_i = to_string(i);
