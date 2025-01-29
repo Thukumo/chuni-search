@@ -6,47 +6,121 @@
 #include <iostream>
 using namespace std;
 #define threads_per_block 32
-#define typeof_memo int
+#define typeof_memo uint8_t
 
 __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, typeof_memo *points) {
-    int a = blockIdx.y, m = blockIdx.z*threads_per_block + threadIdx.x; //mだけグリッドzとブロック内で分けてる
-    int idx = blockIdx.y * gridDim.z * threads_per_block + m; // 修正: blockDim.z -> gridDim.z
-    if (max_notes < jc + j + a + m || !(jc + j + a + m))
+    int justice = j + blockIdx.x, a = blockIdx.y, m = blockIdx.z*threads_per_block + threadIdx.x; //mだけグリッドzとブロック内で分けてる
+    int idx = blockIdx.x * threads_per_block*gridDim.z * (max_notes + 1) + a * gridDim.z*threads_per_block + m;
+    if (max_notes < jc + justice + a + m || !(jc + justice + a + m))
     {
-        points[idx] = -1;
+        points[idx] = 0;
         return;
     }
-    //points[idx] = memo[(size_t)((jc*1.01f + j + a * 0.5f) * 1000000 / (jc + j + a + m))] + memo[jc] + memo[j] + memo[a] + memo[m];
-    //points[idx] =memo[(size_t)((jc*1.01f + j + a * 0.5f) * 1000000 / (jc + j + a + m))];
-    points[idx] = ((jc*1.01f + j + a * 0.5f) * 1000000 / (jc + j + a + m));
+    points[idx] = memo[(size_t)((jc*1.01f + justice + a * 0.5f) * 1000000 / (jc + justice + a + m))] + memo[jc] + memo[justice] + memo[a] + memo[m];
     return;
 }
 
-int main() //5.cuは今後のテスト用に残しておく
+int main()
 {
-    int test = 100;
-    dim3 grid(1, test+1, (test+1)/threads_per_block + !!(test%threads_per_block));
+    int max_notes = 4444;
+    
     dim3 block(threads_per_block);
-    typeof_memo *host_memo = new typeof_memo[1010000 + 1], *memo, *points;
-    cudaMallocManaged(&points, sizeof(typeof_memo) *grid.x * grid.y * grid.z * threads_per_block);
-    #pragma omp parallel for
+    int j_range = 1;
+    //ここでGPUメモリ(ホストメモリも)の使用量を調整
+    int memory_usage_limit = 1024*2; //MB
+    while ((double)sizeof(typeof_memo) * (max_notes+1) * j_range * (max_notes+1)/1024/1024 < memory_usage_limit) j_range++;
+    j_range-=1;
+    //0~max_notesなので全部max_notes+1になってる
+    //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1
+    int m_num = (max_notes+1)/threads_per_block + !!((max_notes+1)%threads_per_block);
+
+    dim3 grid(j_range, max_notes+1, m_num); //x: j(長さ), y: a, z: m
+    int current_max = 1, score;
+    typeof_memo *memo, *host_memo = new typeof_memo[1010000 + 1], *points;
+    cudaError_t err;
+    err = cudaMallocManaged(&points, sizeof(typeof_memo) *grid.x * grid.y * grid.z * threads_per_block);
+    if (err != cudaSuccess)
+    {
+        cerr << "Failed to allocate points: " << cudaGetErrorString(err) << endl;
+        return -1;
+    }
+    err = cudaMalloc(&memo, sizeof(typeof_memo) * (1010000 + 1)); //よく使うからこれはグローバルメモリに載せる コンスタントにはでかすぎ
+    if (err != cudaSuccess)
+    {
+        cerr << "Failed to allocate memo: " << cudaGetErrorString(err) << endl;
+        return -1;
+    }
+    #pragma omp parallel for //ほんとは各桁いい感じに回せばいいけどめんどいからゴリ押す
     for (int i = 0; i <= 1010000; i++) {
         auto s_i = to_string(i);
+        host_memo[i] = 0;
         for (int j = 0; j < s_i.size(); j++) if (s_i[j] == '7') host_memo[i]++;
     }
-    cudaMalloc(&memo, sizeof(typeof_memo) * (1010000 + 1));
-    cudaMemcpy(memo, host_memo, sizeof(typeof_memo) * (1010000 + 1), cudaMemcpyHostToDevice);
-    delete[] host_memo;
-    calc_score << <grid, block >> > (3898 - 56 - 18, 56, 40000, memo, points);
-    cudaDeviceSynchronize();
-    for (int a = 0; a < grid.y; a++)
+    err = cudaMemcpy(memo, host_memo, sizeof(typeof_memo) * (1010000 + 1), cudaMemcpyHostToDevice);
+    if (err != cudaSuccess)
     {
-        for (int m = 0; m < grid.z*threads_per_block; m++)
+        cerr << "Failed to copy memo: " << cudaGetErrorString(err) << endl;
+        return -1;
+    }
+    delete[] host_memo;
+
+    cout << "--------" << current_max << "--------" << endl;
+    for (int jc = 0; jc <= max_notes; jc++)
+    {
+        for (int j = 0; j <= max_notes-jc; j+=j_range)
         {
-            int idx = a * grid.z * threads_per_block + m;
-            if (points[idx] >= 0) {
-                if(1007500 <= points[idx]) cout << "(" << a << ", " << m << "): " << points[idx] << endl;
+            calc_score << <grid, block >> > (jc, j, max_notes, memo, points);
+            cudaDeviceSynchronize();
+            cudaError_t err = cudaGetLastError();
+            if (err != cudaSuccess) {
+                cerr << "Failed to launch calc_score kernel: " << cudaGetErrorString(err) << endl;
+                return -1;
+            }
+            for (int jdiff = 0; jdiff < j_range; jdiff++) for (int attack = 0; attack <= max_notes-jc-j; attack++)
+            for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
+            {
+                int idx = jdiff * (max_notes + 1) * m_num * threads_per_block + attack * m_num * 
+                    threads_per_block + miss;
+                    if (current_max <= points[idx]) {
+                        if(current_max < points[idx])
+                        {
+                            current_max = points[idx];
+                            cout << "--------" << current_max << "--------" << endl;
+                        }
+                        score = (jc*1.01f + j +jdiff+ attack * 0.5f) * 1000000 / (jc + j + jdiff + attack + miss);
+                        cout << jc+j+jdiff+attack+miss << " " << score << " "
+                        << jc << "-" << j+jdiff << "-" << attack << "-" << miss << " " << +points[idx] << " 7(s)" << endl;
+                    }
             }
         }
+
+        // 残ったjusticeを処理
+        grid.x = 1;
+        for (int j = (max_notes - jc + 1) / j_range * j_range; j <= max_notes-jc; j++)
+        {
+            calc_score << <grid, block >> > (jc, j, max_notes, memo, points);
+            cudaDeviceSynchronize();
+            
+            for (int attack = 0; attack <= max_notes-jc-j; attack++) {
+                for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
+                {
+                    int idx = attack * m_num * threads_per_block + miss;
+                    if (current_max <= points[idx]) {
+                        if(current_max < points[idx])
+                        {
+                            current_max = points[idx];
+                            cout << "--------" << current_max << "--------" << endl;
+                        }
+                        score = (jc*1.01f + j + attack * 0.5f) * 1000000 / (jc + j + attack + miss);
+                        cout << jc+j+attack+miss << " " << score << " "
+                        << jc << "-" << j << "-" << attack << "-" << miss << " " << +points[idx] << " 7(s)" << endl;
+                    }
+                }
+            }
+        }
+        grid.x = j_range;
     }
+
+    cout << "Exploration finished!" << endl;
+    return 0;
 }
