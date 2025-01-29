@@ -6,7 +6,7 @@
 #include <iostream>
 using namespace std;
 #define threads_per_block 32
-#define typeof_memo uint8_t
+#define typeof_memo unsigned char
 
 __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, typeof_memo *points) {
     int justice = j + blockIdx.x, a = blockIdx.y, m = blockIdx.z*threads_per_block + threadIdx.x; //mだけグリッドzとブロック内で分けてる
