@@ -6,7 +6,7 @@
 #include <iostream>
 using namespace std;
 #define threads_per_block 32
-#define typeof_memo uint8_t
+#define typeof_memo unsigned char
 //ここでGPUメモリ(ホストメモリも)の使用量を調整
 #define memory_usage_limit 1024 * 2 //MB
 
