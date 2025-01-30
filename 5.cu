@@ -46,7 +46,7 @@ __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, type
     int idx = blockIdx.x * gridDim.y * gridDim.z * threads_per_block
     + a * gridDim.z*threads_per_block
     + m;
-    if (max_notes < jc + justice + a + m || jc + justice + a + m == 0) // 0除算, 無駄な計算をかいひ
+    if (max_notes < jc + justice + a + m || !(jc + justice + a + m)) // 0除算, 無駄な計算をかいひ
     {
         points[idx] = 0;
         return;
