@@ -1,4 +1,8 @@
-﻿#include <assert.h>
+/*
+バグの原因探る用に作ったやつ
+unknownErrorが発生していたのは、pointsにアクセスするための添字をint型の変数で管理していたことが原因だと思う
+*/
+#include <assert.h>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "omp.h"
@@ -9,7 +13,7 @@ using namespace std;
 #define threads_per_block 32
 #define typeof_memo int8_t
 //ここでGPUメモリ(ホストメモリも)の使用量を調整
-#define memory_usage_limit 1024 * 2 //MB
+#define memory_usage_limit 1024 * 1 //MB
 
 #define cudaDo_Check(err)\
 {\
@@ -95,7 +99,7 @@ int main()
             calc_score << <grid, block >> > (jc, j, max_notes, memo, points);
             cudaDeviceSynchronize();
             kernelCheck();
-            for (int jdiff = 0; jdiff < j_range; jdiff++) for (int attack = 0; attack <= max_notes-jc-j; attack++)
+            if(false)for (int jdiff = 0; jdiff < j_range; jdiff++) for (int attack = 0; attack <= max_notes-jc-j; attack++)
             for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
             {
                 size_t idx = jdiff * (max_notes + 1) * m_num * threads_per_block + attack * m_num * 
@@ -113,6 +117,7 @@ int main()
             }
         }
     }
+
     cout << "Exploration finished!" << endl;
     return 0;
 }
