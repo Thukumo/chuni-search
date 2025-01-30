@@ -6,7 +6,7 @@
 #include <iostream>
 using namespace std;
 #define threads_per_block 32
-#define typeof_memo unsigned char
+#define typeof_memo int8_t
 //ここでGPUメモリ(ホストメモリも)の使用量を調整
 #define memory_usage_limit 1024 * 2 //MB
 
@@ -46,7 +46,7 @@ __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, type
     int idx = blockIdx.x * gridDim.y * gridDim.z * threads_per_block
     + a * gridDim.z*threads_per_block
     + m;
-    if (max_notes < jc + justice + a + m || !(jc + justice + a + m)) // 0除算, 無駄な計算をかいひ
+    if (max_notes < jc + justice + a + m || jc + justice + a + m == 0) // 0除算, 無駄な計算をかいひ
     {
         points[idx] = 0;
         return;
