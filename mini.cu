@@ -47,9 +47,9 @@ using namespace std;
 
 __global__ void calc_score(int jc, int j, int max_notes, typeof_memo *memo, typeof_memo *points)
 {
-    int justice = j + blockIdx.x, a = blockIdx.y, m = blockIdx.z*threads_per_block + threadIdx.x; //mだけグリッドzとブロック内で分けてる
-    size_t idx = blockIdx.x * gridDim.y * gridDim.z * threads_per_block
-    + a * gridDim.z*threads_per_block
+    int justice = j + blockIdx.x, a = blockIdx.y, m = blockIdx.z*mul_elem(blockDim) + threadIdx.x; //mだけグリッドzとブロック内で分けてる
+    size_t idx = blockIdx.x * gridDim.y * gridDim.z * mul_elem(blockDim)
+    + a * gridDim.z*mul_elem(blockDim)
     + m;
     if (max_notes < jc + justice + a + m || !(jc + justice + a + m)) // 0除算, 無駄な計算をかいひ
     {
@@ -70,8 +70,8 @@ int main()
 
 
     //0~max_notesなので全部max_notes+1にしてる
-    //mはブロック内でも複数やるから(max_notes+1)/threads_per_block, あまりが出たら+1
-    int m_num = (max_notes+1)/threads_per_block + !!((max_notes+1)%threads_per_block);
+    //mはブロック内でも複数やるから(max_notes+1)/(ブロック内のスレッド数), あまりが出たら+1
+    int m_num = (max_notes+1)/mul_elem(block) + !!((max_notes+1)%mul_elem(block));
     int j_range = 1;
     while ((double)sizeof(typeof_memo) * j_range * (max_notes+1) * m_num * mul_elem(block)/1024/1024 < memory_usage_limit) j_range++;
     j_range-=1;
@@ -99,11 +99,12 @@ int main()
             calc_score << <grid, block >> > (jc, j, max_notes, memo, points);
             cudaDeviceSynchronize();
             kernelCheck();
-            if(false)for (int jdiff = 0; jdiff < j_range; jdiff++) for (int attack = 0; attack <= max_notes-jc-j; attack++)
-            for (int miss = 0; miss <= max_notes-jc-j-attack; miss++)
+            for (int jdiff = 0; jdiff < j_range; jdiff++) for (int attack = 0; attack <= max_notes-jc-(j+jdiff); attack++)
+            for (int miss = 0; miss <= max_notes-jc-(j+jdiff)-attack; miss++)
             {
-                size_t idx = jdiff * (max_notes + 1) * m_num * threads_per_block + attack * m_num * 
-                    threads_per_block + miss;
+                size_t idx = jdiff * grid.y * grid.z * mul_elem(block)
+                + attack * grid.z * mul_elem(block)
+                + miss;
                     if (current_max <= points[idx]) {
                         if(current_max < points[idx])
                         {
