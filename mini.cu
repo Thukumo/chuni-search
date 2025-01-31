@@ -1,7 +1,3 @@
-/*
-バグの原因探る用に作ったやつ
-unknownErrorが発生していたのは、pointsにアクセスするための添字をint型の変数で管理していたことが原因だと思う
-*/
 #include <assert.h>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
