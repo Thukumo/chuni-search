@@ -14,7 +14,7 @@ using namespace std;
 
 #define cudaDo_Check(err)\
 {\
-    auto tmp = err;\
+    cudaError_t tmp = err;\
     if (tmp)\
     {\
         cerr <<"!!!ERROR!!! " << endl;\
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i <= 1010000; i++)
     {
         h_memo[i] = 0;
-        auto s_i = to_string(i);
+        string s_i = to_string(i);
         for (int j = 0; j < s_i.size(); j++) if (s_i[j] == '7') h_memo[i]++;
     }
     cudaDo_Check(cudaMalloc(&memo, sizeof(typeof_memo) * (1010000 + 1)));
