@@ -35,7 +35,7 @@ using namespace std;
     cout << "Memory: " << prop.totalGlobalMem / 1024 / 1024 << "MB" << endl;\
     cout << "Threads per block: " << prop.maxThreadsPerBlock << endl;\
     cout << "Shared memory per block: " << prop.sharedMemPerBlock / 1024 << "KB" << endl;\
-    cout << "Registers per block: " << prop.regsPerBlock << endl;\
+    cout << "Registers per block: " << prop.regsPerBlock << "B" << endl;\
     cout << "Warp size: " << prop.warpSize << endl;\
     cout << "Max threads per multiprocessor: " << prop.maxThreadsPerMultiProcessor << endl;\
     cout << "Max threads dim: " << prop.maxThreadsDim[0] << " " << prop.maxThreadsDim[1] << " " << prop.maxThreadsDim[2] << endl;\
